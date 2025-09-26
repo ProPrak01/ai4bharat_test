@@ -33,6 +33,8 @@ A comprehensive bug tracking and project management system built with Django RES
 
 ![ER Diagram](./ER_DIAGRAM.png)
 
+[View ER Diagram](./ER_DIAGRAM.png)
+
 The database schema includes the following main entities:
 - **Users**: Custom user model with authentication
 - **Projects**: Project management with ownership
@@ -248,6 +250,17 @@ API documentation is available in Swagger/OpenAPI 3.0 format:
 
 - **Swagger File**: [`swagger.yaml`](./swagger.yaml)
 - **Live API**: `https://api.prakashiitm.site/api/v1/`
+
+### Accessing Swagger Documentation
+
+![Swagger UI](./swagger.png)
+
+To view the interactive API documentation:
+
+1. Go to [https://editor.swagger.io](https://editor.swagger.io)
+2. Click on **"File"** → **"Import URL"**
+3. Enter the URL: `https://ai4bharat.prakashiitm.site/swagger.yaml`
+4. The interactive documentation will load, allowing you to explore and test all API endpoints
 
 ### Key API Endpoints
 
