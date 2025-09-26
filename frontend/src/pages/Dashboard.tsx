@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { projectService } from '../services/project.service';
 import { issueService } from '../services/issue.service';
-import { Project, Issue } from '../types';
+import type { Project, Issue } from '../types';
 import Layout from '../components/Layout';
 
 export default function Dashboard() {

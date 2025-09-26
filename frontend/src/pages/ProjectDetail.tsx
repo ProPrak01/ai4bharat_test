@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { projectService } from '../services/project.service';
 import { issueService } from '../services/issue.service';
-import { Project, Issue, CreateIssueData } from '../types';
+import type { Project, Issue, CreateIssueData } from '../types';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 
@@ -52,7 +52,7 @@ export default function ProjectDetail() {
     try {
       const issuesData = await issueService.getProjectIssues(Number(id), currentPage, searchQuery);
       setIssues(issuesData.results || []);
-      setTotalPages(Math.ceil((issuesData.count || 0) / 20));
+      setTotalPages(Math.ceil((issuesData.pagination?.count || 0) / 20));
     } catch (error) {
       console.error('Failed to load issues:', error);
       toast.error('Failed to load issues');

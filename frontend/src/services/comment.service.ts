@@ -1,5 +1,5 @@
 import api from './api';
-import { Comment, CreateCommentData } from '../types';
+import type { Comment, CreateCommentData } from '../types';
 
 export const commentService = {
   async getComments(projectId: number, issueId: number): Promise<Comment[]> {

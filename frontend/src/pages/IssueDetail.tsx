@@ -2,14 +2,12 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { issueService } from '../services/issue.service';
 import { commentService } from '../services/comment.service';
-import { Issue, Comment } from '../types';
+import type { Issue, Comment } from '../types';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext';
 
 export default function IssueDetail() {
   const { projectId, issueId } = useParams<{ projectId: string; issueId: string }>();
-  const { user } = useAuth();
   const [issue, setIssue] = useState<Issue | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');

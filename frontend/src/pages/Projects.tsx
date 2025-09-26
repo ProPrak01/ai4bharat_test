@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { projectService } from '../services/project.service';
-import { Project, CreateProjectData } from '../types';
+import type { Project, CreateProjectData } from '../types';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 

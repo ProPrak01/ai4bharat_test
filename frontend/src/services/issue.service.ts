@@ -1,5 +1,5 @@
 import api from './api';
-import { ApiResponse, Issue, CreateIssueData, UpdateIssueData } from '../types';
+import type { ApiResponse, Issue, CreateIssueData, UpdateIssueData } from '../types';
 
 export const issueService = {
   async getProjectIssues(projectId: number, page: number = 1, search: string = ''): Promise<ApiResponse<Issue>> {
