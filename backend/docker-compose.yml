@@ -1,0 +1,59 @@
+services:
+  # Django Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bug_tracker_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - logs_volume:/app/logs
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-5yplinpx=s!kkvw+v#mb2jqp+j6@+@ps+zbp-jk+567ku3x#z=
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,15.207.98.110,api.prakashiitm.site,prakashiitm.site
+      - DATABASE_URL=sqlite:///db.sqlite3
+    networks:
+      - bug_tracker_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/admin/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Database Service (PostgreSQL for production-like environment)
+  db:
+    image: postgres:16-alpine
+    container_name: bug_tracker_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=bug_tracker
+      - POSTGRES_USER=bug_user
+      - POSTGRES_PASSWORD=bug_password
+    ports:
+      - "5432:5432"
+    networks:
+      - bug_tracker_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bug_user -d bug_tracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+  logs_volume:
+
+networks:
+  bug_tracker_network:
+    driver: bridge

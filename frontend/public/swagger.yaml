@@ -1,0 +1,1006 @@
+openapi: 3.0.3
+info:
+  title: Bug Tracker API
+  description: |-
+    A comprehensive bug tracking and project management system API.
+
+    This API provides endpoints for managing projects, issues, and collaboration between team members.
+
+    **Features:**
+    - User authentication with JWT tokens
+    - Project management with role-based access control
+    - Issue tracking with status and priority management
+    - Comments and collaboration on issues
+    - Search and pagination support
+
+  version: 1.0.0
+  contact:
+    email: support@bugtracker.com
+
+servers:
+  - url: https://api.prakashiitm.site/api/v1
+    description: Production server (AWS EC2)
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints
+  - name: Users
+    description: User management operations
+  - name: Projects
+    description: Project management endpoints
+  - name: Issues
+    description: Issue tracking and management
+  - name: Comments
+    description: Issue comments and discussions
+
+paths:
+  /auth/register/:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account with username, email, and password
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+                - password_confirm
+              properties:
+                username:
+                  type: string
+                  example: johndoe
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: SecurePass123
+                password_confirm:
+                  type: string
+                  format: password
+                  example: SecurePass123
+                first_name:
+                  type: string
+                  example: John
+                last_name:
+                  type: string
+                  example: Doe
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login/:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate user and receive JWT tokens
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: johndoe
+                password:
+                  type: string
+                  format: password
+                  example: SecurePass123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout/:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Logout the current authenticated user
+      operationId: logoutUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/me/:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Retrieve the authenticated user's profile information
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/:
+    get:
+      tags:
+        - Projects
+      summary: List all projects
+      description: Retrieve a paginated list of all projects accessible to the user
+      operationId: listProjects
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SearchParam'
+      responses:
+        '200':
+          description: Projects retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Projects
+      summary: Create a new project
+      description: Create a new project with name and description
+      operationId: createProject
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - description
+              properties:
+                name:
+                  type: string
+                  example: Bug Tracker Application
+                description:
+                  type: string
+                  example: Main application for tracking bugs and issues
+      responses:
+        '201':
+          description: Project created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/{projectId}/:
+    get:
+      tags:
+        - Projects
+      summary: Get project details
+      description: Retrieve detailed information about a specific project
+      operationId: getProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+      responses:
+        '200':
+          description: Project details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags:
+        - Projects
+      summary: Update project
+      description: Update project details (name, description)
+      operationId: updateProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Updated Project Name
+                description:
+                  type: string
+                  example: Updated project description
+      responses:
+        '200':
+          description: Project updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags:
+        - Projects
+      summary: Delete project
+      description: Delete a project (only owner can delete)
+      operationId: deleteProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+      responses:
+        '204':
+          description: Project deleted successfully
+        '404':
+          description: Project not found
+        '403':
+          description: Permission denied
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/{projectId}/issues/:
+    get:
+      tags:
+        - Issues
+      summary: List project issues
+      description: Retrieve all issues for a specific project with pagination and search
+      operationId: listProjectIssues
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SearchParam'
+      responses:
+        '200':
+          description: Issues retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueListResponse'
+        '404':
+          description: Project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Issues
+      summary: Create a new issue
+      description: Create a new issue within a project
+      operationId: createIssue
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+              properties:
+                title:
+                  type: string
+                  example: Login page not loading
+                description:
+                  type: string
+                  example: Users are unable to access the login page
+                priority:
+                  type: string
+                  enum: [low, medium, high, critical]
+                  default: medium
+                  example: high
+                status:
+                  type: string
+                  enum: [open, in_progress, resolved, closed]
+                  default: open
+                  example: open
+      responses:
+        '201':
+          description: Issue created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/{projectId}/issues/{issueId}/:
+    get:
+      tags:
+        - Issues
+      summary: Get issue details
+      description: Retrieve detailed information about a specific issue
+      operationId: getIssue
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Issue ID
+      responses:
+        '200':
+          description: Issue details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '404':
+          description: Issue or project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags:
+        - Issues
+      summary: Update issue
+      description: Update issue details (title, description, status, priority)
+      operationId: updateIssue
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Issue ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: Updated issue title
+                description:
+                  type: string
+                  example: Updated description
+                status:
+                  type: string
+                  enum: [open, in_progress, resolved, closed]
+                  example: in_progress
+                priority:
+                  type: string
+                  enum: [low, medium, high, critical]
+                  example: high
+      responses:
+        '200':
+          description: Issue updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          description: Invalid input
+        '404':
+          description: Issue or project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags:
+        - Issues
+      summary: Delete issue
+      description: Delete an issue from the project
+      operationId: deleteIssue
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Issue ID
+      responses:
+        '204':
+          description: Issue deleted successfully
+        '404':
+          description: Issue or project not found
+        '403':
+          description: Permission denied
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/{projectId}/issues/{issueId}/comments/:
+    get:
+      tags:
+        - Comments
+      summary: List issue comments
+      description: Retrieve all comments for a specific issue
+      operationId: listComments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Issue ID
+      responses:
+        '200':
+          description: Comments retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentListResponse'
+        '404':
+          description: Issue or project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Comments
+      summary: Add comment to issue
+      description: Create a new comment on an issue
+      operationId: createComment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Issue ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  example: This issue has been fixed in the latest deployment
+      responses:
+        '201':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Invalid input
+        '404':
+          description: Issue or project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/{projectId}/issues/{issueId}/comments/{commentId}/:
+    patch:
+      tags:
+        - Comments
+      summary: Update comment
+      description: Update an existing comment
+      operationId: updateComment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Issue ID
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Comment ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  example: Updated comment content
+      responses:
+        '200':
+          description: Comment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Invalid input
+        '404':
+          description: Comment not found
+        '403':
+          description: Permission denied
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags:
+        - Comments
+      summary: Delete comment
+      description: Delete a comment from an issue
+      operationId: deleteComment
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Project ID
+        - name: issueId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Issue ID
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Comment ID
+      responses:
+        '204':
+          description: Comment deleted successfully
+        '404':
+          description: Comment not found
+        '403':
+          description: Permission denied
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /my-issues/:
+    get:
+      tags:
+        - Issues
+      summary: Get my assigned issues
+      description: Retrieve all issues assigned to the current user
+      operationId: getMyIssues
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+      responses:
+        '200':
+          description: Issues retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number for pagination
+      required: false
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+
+    SearchParam:
+      name: search
+      in: query
+      description: Search query string
+      required: false
+      schema:
+        type: string
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: johndoe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        first_name:
+          type: string
+          example: John
+        last_name:
+          type: string
+          example: Doe
+        full_name:
+          type: string
+          example: John Doe
+        is_active:
+          type: boolean
+          example: true
+        date_joined:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    AuthResponse:
+      type: object
+      properties:
+        access:
+          type: string
+          description: JWT access token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refresh:
+          type: string
+          description: JWT refresh token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/User'
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Bug Tracker Application
+        description:
+          type: string
+          example: Main application for tracking bugs and issues
+        owner:
+          oneOf:
+            - type: string
+              example: johndoe
+            - $ref: '#/components/schemas/User'
+        member_count:
+          type: integer
+          example: 5
+        issue_count:
+          type: integer
+          example: 12
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    Issue:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Login page not loading
+        description:
+          type: string
+          example: Users are unable to access the login page
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+          example: open
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+          example: high
+        project:
+          oneOf:
+            - type: integer
+              example: 1
+            - $ref: '#/components/schemas/Project'
+        project_name:
+          type: string
+          example: Bug Tracker Application
+        reporter:
+          oneOf:
+            - type: string
+              example: johndoe
+            - $ref: '#/components/schemas/User'
+        assignee:
+          oneOf:
+            - type: string
+              example: janedoe
+            - $ref: '#/components/schemas/User'
+          nullable: true
+        comment_count:
+          type: integer
+          example: 3
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        content:
+          type: string
+          example: This issue has been fixed in the latest deployment
+        author:
+          oneOf:
+            - type: string
+              example: johndoe
+            - $ref: '#/components/schemas/User'
+        issue:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    ProjectListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 25
+        next:
+          type: string
+          nullable: true
+          example: https://api.prakashiitm.site/api/v1/projects/?page=2
+        previous:
+          type: string
+          nullable: true
+          example: null
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+
+    IssueListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 45
+        next:
+          type: string
+          nullable: true
+          example: https://api.prakashiitm.site/api/v1/projects/1/issues/?page=2
+        previous:
+          type: string
+          nullable: true
+          example: null
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Issue'
+
+    CommentListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 8
+        next:
+          type: string
+          nullable: true
+          example: https://api.prakashiitm.site/api/v1/projects/1/issues/5/comments/?page=2
+        previous:
+          type: string
+          nullable: true
+          example: null
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: Authentication credentials were not provided
+        error:
+          type: string
+          example: Invalid input data
